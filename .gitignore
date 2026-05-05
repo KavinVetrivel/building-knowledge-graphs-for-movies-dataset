@@ -1,2 +1,17 @@
 .venv
 .env
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Common Python tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local editor/system artifacts
+.vscode/
+.idea/
+.DS_Store

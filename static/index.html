@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Graph</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --bg-soft: #111a32;
+    --panel: #16213e;
+    --panel-2: #1b2a50;
+    --text: #eef2ff;
+    --muted: #9ba6c2;
+    --accent: #f05b78;
+    --accent-2: #ff8e53;
+    --shadow: 0 10px 30px rgba(3, 8, 21, 0.35);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background:
+      radial-gradient(circle at 15% -10%, rgba(240, 91, 120, 0.22), transparent 40%),
+      radial-gradient(circle at 90% 5%, rgba(255, 142, 83, 0.2), transparent 35%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(90deg, rgba(22, 33, 62, 0.96), rgba(27, 42, 80, 0.96));
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: var(--shadow);
+  }
+  header h1 { font-size: 1.25rem; color: #ffd4dd; letter-spacing: 0.2px; }
+  #search-box {
+    flex: 1;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 0.98rem;
+  }
+  #search-box:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(240, 91, 120, 0.22);
+  }
+  main { padding: 26px 28px 34px; max-width: 1100px; margin: 0 auto; }
+  #search-results { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 30px; }
+  .result-pill {
+    background: rgba(22, 33, 62, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: transform 0.16s, border-color 0.16s, background 0.16s;
+  }
+  .result-pill:hover { background: #1f315d; border-color: rgba(240, 91, 120, 0.45); transform: translateY(-1px); }
+  .result-pill span { color: var(--muted); font-size: 0.8rem; margin-left: 6px; }
+  #movie-card { background: var(--panel); border-radius: 14px; padding: 24px; margin-bottom: 30px; display: none; border: 1px solid rgba(255,255,255,0.08); box-shadow: var(--shadow); }
+  #movie-card h2 { font-size: 1.8rem; margin-bottom: 6px; }
+  #movie-card .meta { color: var(--muted); margin-bottom: 16px; font-size: 0.95rem; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .tag { background: #1e3d73; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.08); }
+  .tag.actor { background: #1a472a; cursor: pointer; }
+  .tag.actor:hover { background: #2d6a4f; }
+  .tag.genre { background: #4a1942; cursor: pointer; }
+  .tag.genre:hover { background: #6d2b6d; }
+  .section-title { font-size: 1rem; color: var(--muted); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; }
+  #recommendations h3, #genre-movies h3, #actor-movies h3 { margin-bottom: 16px; font-size: 1.1rem; color: #ffb7c5; }
+  .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .movie-tile { background: var(--panel); border-radius: 10px; padding: 14px; cursor: pointer; transition: transform 0.2s, background 0.2s, border-color 0.2s; border: 1px solid rgba(255,255,255,0.08); }
+  .movie-tile:hover { transform: translateY(-3px); background: var(--panel-2); border-color: rgba(240, 91, 120, 0.35); }
+  .movie-tile .t { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
+  .movie-tile .s { color: var(--muted); font-size: 0.82rem; }
+  .rating { color: #f4c542; font-weight: 700; }
+  #genres-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .genre-btn { background: #4a1942; padding: 6px 14px; border-radius: 16px; cursor: pointer; font-size: 0.85rem; transition: transform 0.16s, background 0.16s; }
+  .genre-btn:hover, .genre-btn.active { background: #e94560; transform: translateY(-1px); }
+  #status { color: var(--muted); font-size: 0.9rem; padding: 10px 0; }
+
+  @media (max-width: 720px) {
+    header { padding: 14px 14px; }
+    header h1 { font-size: 1.05rem; }
+    main { padding: 16px 14px 22px; }
+    #movie-card { padding: 16px; }
+    #movie-card h2 { font-size: 1.4rem; }
+    .movie-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎬 Movie Graph</h1>
+  <input id="search-box" type="text" placeholder="Search a movie..." autocomplete="off">
+</header>
+
+<main>
+  <div id="status">Loading genres...</div>
+  <div id="genres-bar"></div>
+  <div id="search-results"></div>
+  <div id="movie-card">
+    <h2 id="mc-title"></h2>
+    <div class="meta" id="mc-meta"></div>
+    <div class="section-title">Genres</div>
+    <div class="tags" id="mc-genres"></div>
+    <div class="section-title">Director</div>
+    <div class="tags" id="mc-directors"></div>
+    <div class="section-title">Top Cast</div>
+    <div class="tags" id="mc-cast"></div>
+  </div>
+  <div id="recommendations" style="display:none"><h3>You might also like</h3><div class="movie-grid" id="rec-grid"></div></div>
+  <div id="genre-movies" style="display:none"><h3 id="genre-title"></h3><div class="movie-grid" id="genre-grid"></div></div>
+  <div id="actor-movies" style="display:none"><h3 id="actor-title"></h3><div class="movie-grid" id="actor-grid"></div></div>
+</main>
+
+<script>
+const api = async (path) => {
+  const res = await fetch(path);
+  if (!res.ok) {
+    throw new Error(`Request failed: ${path}`);
+  }
+  return res.json();
+};
+
+const pick = (obj, keys, fallback = null) => {
+  for (const k of keys) {
+    if (obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
+  }
+  return fallback;
+};
+
+// ── Load genres on startup ────────────────────────────────────────────────────
+api('/genre_list').then(data => {
+  const bar = document.getElementById('genres-bar');
+  document.getElementById('status').textContent = '';
+  data.forEach(g => {
+    const btn = document.createElement('div');
+    btn.className = 'genre-btn';
+    const genreName = pick(g, ['Genre', 'genre'], 'Unknown');
+    const genreCount = pick(g, ['MovieCount', 'count'], 0);
+    btn.textContent = `${genreName} (${genreCount})`;
+    btn.onclick = () => loadGenre(genreName, btn);
+    bar.appendChild(btn);
+  });
+}).catch(() => {
+  document.getElementById('status').textContent = 'Genres unavailable';
+});
+
+// ── Search ────────────────────────────────────────────────────────────────────
+let searchTimer;
+document.getElementById('search-box').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  const val = e.target.value.trim();
+  if (val.length < 2) { document.getElementById('search-results').innerHTML = ''; return; }
+  searchTimer = setTimeout(() => {
+    api(`/search?title=${encodeURIComponent(val)}`).then(data => {
+      const container = document.getElementById('search-results');
+      container.innerHTML = '';
+      data.forEach(m => {
+        const title = pick(m, ['title', 'MovieTitle'], 'Unknown');
+        const year = pick(m, ['year', 'Year'], '');
+        const rating = pick(m, ['rating', 'Rating'], 'N/A');
+        const pill = document.createElement('div');
+        pill.className = 'result-pill';
+        pill.textContent = title;
+        const meta = document.createElement('span');
+        meta.textContent = `${year} ★ ${rating}`;
+        pill.appendChild(meta);
+        pill.onclick = () => loadMovie(title);
+        container.appendChild(pill);
+      });
+    }).catch(() => {
+      document.getElementById('search-results').innerHTML = '';
+    });
+  }, 300);
+});
+
+// ── Load movie detail ─────────────────────────────────────────────────────────
+async function loadMovie(title) {
+  try {
+    const m = await api(`/details?title=${encodeURIComponent(title)}`);
+    const movieTitle = pick(m, ['title', 'MovieTitle'], title);
+    const year = pick(m, ['year', 'Year'], '');
+    const rating = pick(m, ['rating', 'Rating'], 'N/A');
+    const genres = pick(m, ['genres', 'Genres'], []);
+    const directors = pick(m, ['directors', 'Directors'], []);
+    const cast = pick(m, ['cast', 'Cast'], []);
+
+    document.getElementById('search-results').innerHTML = '';
+    document.getElementById('search-box').value = '';
+    document.getElementById('genre-movies').style.display = 'none';
+    document.getElementById('actor-movies').style.display = 'none';
+
+    document.getElementById('mc-title').textContent = movieTitle;
+    document.getElementById('mc-meta').textContent = `${year}  ★ ${rating}`;
+    document.getElementById('movie-card').style.display = 'block';
+
+    const genreEl = document.getElementById('mc-genres');
+    genreEl.innerHTML = '';
+    genres.forEach(g => {
+      const t = document.createElement('div');
+      t.className = 'tag genre';
+      t.textContent = g;
+      t.onclick = () => loadGenre(g);
+      genreEl.appendChild(t);
+    });
+
+    const dirEl = document.getElementById('mc-directors');
+    dirEl.innerHTML = '';
+    directors.forEach(d => {
+      const t = document.createElement('div');
+      t.className = 'tag';
+      t.textContent = d;
+      dirEl.appendChild(t);
+    });
+
+    const castEl = document.getElementById('mc-cast');
+    castEl.innerHTML = '';
+    cast.forEach(a => {
+      const t = document.createElement('div');
+      t.className = 'tag actor';
+      t.textContent = a;
+      t.onclick = () => loadActor(a);
+      castEl.appendChild(t);
+    });
+
+    // load recommendations
+    const recs = await api(`/recommend?title=${encodeURIComponent(title)}`);
+    const grid = document.getElementById('rec-grid');
+    grid.innerHTML = '';
+    recs.forEach(r => {
+      const recTitle = pick(r, ['title', 'MovieTitle'], 'Unknown');
+      const recYear = pick(r, ['year', 'Year'], '');
+      const recRating = pick(r, ['rating', 'Rating'], 'N/A');
+      const score = pick(r, ['score', 'shared'], '');
+      grid.appendChild(movieTile(recTitle, recYear, recRating, score ? `${score} match pts` : ''));
+    });
+    document.getElementById('recommendations').style.display = 'block';
+  } catch (error) {
+    console.error('Failed to load movie details', error);
+    document.getElementById('movie-card').style.display = 'none';
+    document.getElementById('recommendations').style.display = 'none';
+    const results = document.getElementById('search-results');
+    results.textContent = 'Could not load movie details. Please try again.';
+  }
+}
+
+// ── Load genre ────────────────────────────────────────────────────────────────
+async function loadGenre(name, btn) {
+  try {
+    document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.getElementById('movie-card').style.display = 'none';
+    document.getElementById('recommendations').style.display = 'none';
+    document.getElementById('actor-movies').style.display = 'none';
+
+    const data = await api(`/movie_by_genre?genre=${encodeURIComponent(name)}`);
+    document.getElementById('genre-title').textContent = `${name} Movies`;
+    const grid = document.getElementById('genre-grid');
+    grid.innerHTML = '';
+    data.forEach(m => {
+      const title = pick(m, ['title', 'MovieTitle'], 'Unknown');
+      const year = pick(m, ['year', 'Year'], '');
+      const rating = pick(m, ['rating', 'Rating'], 'N/A');
+      grid.appendChild(movieTile(title, year, rating));
+    });
+    document.getElementById('genre-movies').style.display = 'block';
+  } catch (error) {
+    console.error('Failed to load genre movies', error);
+    document.getElementById('genre-grid').innerHTML = '';
+    document.getElementById('genre-title').textContent = 'Could not load genre movies';
+    document.getElementById('genre-movies').style.display = 'block';
+  }
+}
+
+// ── Load actor ────────────────────────────────────────────────────────────────
+async function loadActor(name) {
+  try {
+    document.getElementById('genre-movies').style.display = 'none';
+    document.getElementById('movie-card').style.display = 'none';
+    document.getElementById('recommendations').style.display = 'none';
+
+    const data = await api(`/actor_info?name=${encodeURIComponent(name)}`);
+    document.getElementById('actor-title').textContent = `${name}'s Movies`;
+    const grid = document.getElementById('actor-grid');
+    grid.innerHTML = '';
+    data.forEach(row => {
+      const movies = pick(row, ['Movies', 'movies'], []);
+      movies.forEach(movieName => grid.appendChild(movieTile(movieName, '', '', '')));
+    });
+    document.getElementById('actor-movies').style.display = 'block';
+  } catch (error) {
+    console.error('Failed to load actor movies', error);
+    document.getElementById('actor-grid').innerHTML = '';
+    document.getElementById('actor-title').textContent = 'Could not load actor movies';
+    document.getElementById('actor-movies').style.display = 'block';
+  }
+}
+
+// ── Tile builder ──────────────────────────────────────────────────────────────
+function movieTile(title, year, rating, sub) {
+  const tile = document.createElement('div');
+  tile.className = 'movie-tile';
+  const titleDiv = document.createElement('div');
+  titleDiv.className = 't';
+  titleDiv.textContent = title || '';
+
+  const subDiv = document.createElement('div');
+  subDiv.className = 's';
+  const yearText = document.createTextNode(`${year || ''} `);
+  subDiv.appendChild(yearText);
+
+  const ratingSpan = document.createElement('span');
+  ratingSpan.className = 'rating';
+  ratingSpan.textContent = `★ ${rating || ''}`;
+  subDiv.appendChild(ratingSpan);
+
+  if (sub) {
+    subDiv.appendChild(document.createTextNode(` · ${sub}`));
+  }
+
+  tile.appendChild(titleDiv);
+  tile.appendChild(subDiv);
+  tile.onclick = () => loadMovie(title);
+  return tile;
+}
+</script>
+</body>
+</html>

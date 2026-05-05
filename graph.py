@@ -38,6 +38,10 @@ def load_df(df, query, batch_size=500):
             session.execute_write(load_batch, query, batch)
             print(f"  loaded {min(i+batch_size, len(records))}/{len(records)}")
 
+def run_query(query,data,**kwargs):
+    with driver.session() as session:
+        return session.run(query,name=name).data()
+
 # ── Constraints ───────────────────────────────────────────────────────────────
 print("Creating constraints...")
 run("CREATE CONSTRAINT movie_id IF NOT EXISTS FOR (m:Movie) REQUIRE m.id IS UNIQUE")
@@ -63,7 +67,7 @@ mg       = clean(mg)
 acted_in = clean(acted_in)
 directed = clean(directed)
 
-# ── Movie nodes ───────────────────────────────────────────────────────────────
+'''# ── Movie nodes ───────────────────────────────────────────────────────────────
 print("Loading Movies...")
 load_df(movies, """
 UNWIND $rows AS row
@@ -117,7 +121,7 @@ UNWIND $rows AS row
 MATCH (p:Person {id: toInteger(row.person_id)})
 MATCH (m:Movie {id: toInteger(row.movie_id)})
 MERGE (p)-[:DIRECTED]->(m)
-""")
+""")'''
 
 # ── Counts ────────────────────────────────────────────────────────────────────
 print("\n── Node counts ──")
@@ -152,5 +156,12 @@ if result:
 else:
     print("Not found")
 
+name = input("enter a actor name:")
+print("costars of "+name+":")
+response = run_query(
+    '''match (p:Person {name: $name})-[:ACTED_IN]->(m:Movie)<-[:ACTED_IN]-(costar:Person) return DISTINCT costar.name limit 10''',name
+)
+
+print(response)
 driver.close()
 print("\nDone.")

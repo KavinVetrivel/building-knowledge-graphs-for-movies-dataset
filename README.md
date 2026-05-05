@@ -3,7 +3,7 @@
 This project started as a learning step for building knowledge graphs using Neo4j database. 
 
 I have used the TMDB 5000 Movie Dataset and imported all the data onto the database, populating nodes and creating relationships between the data. 
-![Database information](docs/database_info.png)
+![Database information](img/database_info.png)
 
 I have then created queries for searching movies, fetching movie details, movie recommandations, actor info, listing all the genres, sorting movie by genre. 
 

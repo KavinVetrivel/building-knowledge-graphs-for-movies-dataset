@@ -124,8 +124,8 @@ def movie_by_genre(genre:str):
     ''', genre=genre)
     return response
 
-app.mount("/static", StaticFiles(directory="static"),name="static")
+app.mount("/docs", StaticFiles(directory="docs"),name="docs")
 
 @app.get("/")
 def root():
-    return FileResponse("static/index.html")
+    return FileResponse("docs/index.html")

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from neo4j import GraphDatabase
 import os
 from dotenv import load_dotenv
@@ -27,6 +28,14 @@ if not auth_user or not auth_password:
 
 driver = GraphDatabase.driver(URI,auth=(auth_user,auth_password))
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def query_run(query, **kwargs):

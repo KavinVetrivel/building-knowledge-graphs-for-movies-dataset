@@ -123,8 +123,10 @@
 </main>
 
 <script>
+const API_BASE = 'https://movie-graph.onrender.com';
+
 const api = async (path) => {
-  const res = await fetch(path);
+  const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) {
     throw new Error(`Request failed: ${path}`);
   }

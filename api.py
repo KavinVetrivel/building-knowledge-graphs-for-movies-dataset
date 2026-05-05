@@ -9,24 +9,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-URI=os.getenv("URI")
-AUTH=os.getenv("AUTH")
+URI = os.getenv("NEO4J_URI") or os.getenv("URI")
+USER = os.getenv("NEO4J_USERNAME")
+PASSWORD = os.getenv("NEO4J_PASSWORD")
+LEGACY_AUTH = os.getenv("AUTH")
 
 if not URI:
-    raise RuntimeError("Missing required environment variable: URI")
+    raise RuntimeError("Missing required environment variable: NEO4J_URI")
 
-if not AUTH:
-    raise RuntimeError("Missing required environment variable: AUTH (expected user:password)")
+if not USER or not PASSWORD:
+    if LEGACY_AUTH and ":" in LEGACY_AUTH:
+        USER, PASSWORD = LEGACY_AUTH.split(":", 1)
+    else:
+        raise RuntimeError(
+            "Missing required environment variables: NEO4J_USERNAME and NEO4J_PASSWORD"
+        )
 
-if ":" not in AUTH:
-    raise RuntimeError("Invalid AUTH format. Expected user:password")
-
-auth_user, auth_password = AUTH.split(":", 1)
-
-if not auth_user or not auth_password:
-    raise RuntimeError("Invalid AUTH format. Both username and password are required")
-
-driver = GraphDatabase.driver(URI,auth=(auth_user,auth_password))
+driver = GraphDatabase.driver(URI, auth=(USER, PASSWORD))
 app = FastAPI()
 
 # Explicitly allow the frontend origins that will call this API.

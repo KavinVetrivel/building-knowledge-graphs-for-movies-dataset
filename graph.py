@@ -5,17 +5,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-URI = os.getenv("URI")
-AUTH = os.getenv("AUTH")
+URI = os.getenv("NEO4J_URI")
+USER = os.getenv("NEO4J_USERNAME")
+PASSWORD = os.getenv("NEO4J_PASSWORD")
 
-if not URI or not AUTH:
-    raise ValueError("Missing URI or AUTH in .env")
+if not URI:
+    raise ValueError("Missing NEO4J_URI in .env")
 
-auth_user, sep, auth_password = AUTH.partition(":")
-if not sep or not auth_user or not auth_password:
-    raise ValueError("AUTH must be in the format username:password")
+if not USER or not PASSWORD:
+    raise ValueError("Missing NEO4J_USERNAME or NEO4J_PASSWORD in .env")
 
-driver = GraphDatabase.driver(URI, auth=(auth_user, auth_password))
+driver = GraphDatabase.driver(URI, auth=(USER, PASSWORD))
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
@@ -67,7 +67,7 @@ mg       = clean(mg)
 acted_in = clean(acted_in)
 directed = clean(directed)
 
-'''# ── Movie nodes ───────────────────────────────────────────────────────────────
+# ── Movie nodes ───────────────────────────────────────────────────────────────
 print("Loading Movies...")
 load_df(movies, """
 UNWIND $rows AS row
@@ -121,7 +121,7 @@ UNWIND $rows AS row
 MATCH (p:Person {id: toInteger(row.person_id)})
 MATCH (m:Movie {id: toInteger(row.movie_id)})
 MERGE (p)-[:DIRECTED]->(m)
-""")'''
+""")
 
 # ── Counts ────────────────────────────────────────────────────────────────────
 print("\n── Node counts ──")

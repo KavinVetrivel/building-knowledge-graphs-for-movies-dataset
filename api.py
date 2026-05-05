@@ -29,10 +29,19 @@ if not auth_user or not auth_password:
 driver = GraphDatabase.driver(URI,auth=(auth_user,auth_password))
 app = FastAPI()
 
+# Explicitly allow the frontend origins that will call this API.
+# Include the GitHub Pages origin and common local testing origins.
+allowed_origins = [
+    "https://kavinvetrivel.github.io",
+    "https://movie-graph.onrender.com",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
